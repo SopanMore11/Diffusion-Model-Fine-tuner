@@ -1,0 +1,9 @@
+torch
+diffusers
+transformers
+peft
+bitsandbytes
+accelerate
+safetensors
+Pillow
+tqdm
