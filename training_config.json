@@ -1,0 +1,33 @@
+{
+  "model_name": "runwayml/stable-diffusion-v1-5",
+  "images_path": "train_images",
+  "hf_api_key": null,
+  "trigger_phrase_phrase": "techtron",
+  "batch_size": 1,
+  "gradient_accumulation_steps": 1,
+  "steps": 2000,
+  "learning_rate": 1e-4,
+  "optimizer": "adamw8bit",
+  "lora_rank": 16,
+  "lora_alpha": 16,
+  "save_every": 200,
+  "sample_every": 200,
+  "max_step_saves": 4,
+  "save_dtype": "float16",
+  "sample_width": 512,
+  "sample_height": 512,
+  "guidance_scale": 7.5,
+  "sample_steps": 20,
+  "sample_prompts": [
+    "[trigger_phrase] linkedin headshot, professional, high quality, studio lighting, corporate background, sharp focus, dslr photo",
+    "[trigger_phrase] instagram post, vibrant colors, influencer style, street fashion, bokeh background, dramatic lighting",
+    "[trigger_phrase] facebook profile picture, friendly, casual, outdoors, smiling, natural light, park setting",
+    "[trigger_phrase] fashion model for a magazine cover, dramatic pose, high fashion attire, bold colors, magazine logo",
+    "[trigger_phrase] video game character, detailed armor, futuristic city background, neon lights, high resolution, concept art",
+    "[trigger_phrase] professional chef, elegant, cooking in a modern kitchen, gourmet dish, steam rising, cinematic",
+    "[trigger_phrase] professional photographer, holding a camera, urban exploration, golden hour, wide shot",
+    "[trigger_phrase] musician, playing a guitar on stage, concert lighting, energetic crowd, rock star, detailed",
+    "[trigger_phrase] painter in a studio, artistic style, easel, brushes, canvas, natural light, soft colors",
+    "[trigger_phrase] professional athlete, action shot, dynamic pose, sports stadium, bright sunlight, motion blur"
+  ]
+}
