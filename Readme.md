@@ -87,3 +87,22 @@ The `training_config.json` file controls all aspects of the training process. Up
     "[trigger] professional athlete, action shot, dynamic pose, sports stadium, bright sunlight, motion blur"
   ]
 }
+
+---
+
+## 🖥️ Streamlit UI
+
+You can run a single-page Streamlit interface to upload images and captions and launch training directly:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+### Caption upload options
+
+- **Paste mappings** in this format (one per line):
+  `filename.png|your caption text`
+- **Upload `.txt` files** with matching basenames (for `image1.png`, upload `image1.txt`).
+
+The UI prepares a dataset folder under `ui_runs/` and then runs the existing fine-tuning pipeline. Outputs are written to `output/`.
+

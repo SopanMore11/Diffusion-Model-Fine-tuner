@@ -1,21 +1,16 @@
-# Example: Load training_config.json
 import json
 import os
 
-def load_training_config(file_path="training_config.json"):
-    config_file = file_path
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-    return config
-
-
 from huggingface_hub import login as hf_login
-import os
 
-def login_huggingface(token_env_var="HF_TOKEN"):
-    """
-    Login to Hugging Face using token from environment variable.
-    """
+
+def load_training_config(file_path: str = "training_config.json"):
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def login_huggingface(token_env_var: str = "HF_TOKEN"):
+    """Login to Hugging Face using token from environment variable, if available."""
     hf_token = os.getenv(token_env_var)
     if hf_token:
         hf_login(hf_token)
