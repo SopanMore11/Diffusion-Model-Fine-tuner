@@ -2,11 +2,10 @@
   "model_name": "runwayml/stable-diffusion-v1-5",
   "images_path": "train_images",
   "hf_api_key": null,
-  "trigger_phrase_phrase": "techtron",
   "batch_size": 1,
   "gradient_accumulation_steps": 1,
   "steps": 2000,
-  "learning_rate": 1e-4,
+  "learning_rate": 0.0001,
   "optimizer": "adamw8bit",
   "lora_rank": 16,
   "lora_alpha": 16,
@@ -29,5 +28,6 @@
     "[trigger_phrase] musician, playing a guitar on stage, concert lighting, energetic crowd, rock star, detailed",
     "[trigger_phrase] painter in a studio, artistic style, easel, brushes, canvas, natural light, soft colors",
     "[trigger_phrase] professional athlete, action shot, dynamic pose, sports stadium, bright sunlight, motion blur"
-  ]
+  ],
+  "trigger_phrase": "techtron"
 }

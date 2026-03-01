@@ -1,9 +1,12 @@
 torch
+torchvision
 diffusers
 transformers
 peft
 bitsandbytes
 accelerate
 safetensors
+huggingface_hub
 Pillow
 tqdm
+streamlit
