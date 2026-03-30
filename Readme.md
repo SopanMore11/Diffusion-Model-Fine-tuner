@@ -1,108 +1,235 @@
-# LoRA Fine-Tuning for Stable Diffusion: A Portfolio Project
+# LoRA Fine-Tuning for Diffusion Models
 
-This project showcases a professional and modular pipeline for fine-tuning a Stable Diffusion model using Low-Rank Adaptation (LoRA). It demonstrates practical skills in deep learning, MLOps principles, and Python development by creating a clear, maintainable, and highly configurable training and inference system.
-
-The goal of this project is to provide a robust framework for creating custom Stable Diffusion models for a specific subject or style with minimal computational overhead. The entire process, from data preparation to model inference, is designed to be easily reproducible and scalable.
+A modular pipeline for fine-tuning **Stable Diffusion** and **FLUX.1 Schnell** models using Low-Rank Adaptation (LoRA). It provides a clear, maintainable, and configurable training and inference system with a Streamlit UI.
 
 ---
 
-## ✨ Features
+## Supported Models
 
-* **Modular Codebase**: The project is structured into logical Python files (`model_utils.py`, `dataset.py`, `training_and_sampling.py`, `inference.py`), making it easy to understand, modify, and extend.
-* **LoRA Support**: Efficiently fine-tune large Stable Diffusion models by only training a small number of parameters, significantly reducing GPU memory usage and training time.
-* **Configurable Training**: All training parameters are defined in an external `training_config.json` file, allowing for easy experimentation and version control of different training runs.
-* **Automatic Sample Generation**: Generate sample images at regular intervals during training to monitor progress and provide visual feedback.
-* **`safetensors` support**: The final LoRA weights are saved in the recommended `safetensors` format for secure and fast loading.
+| Model | Architecture | Default Resolution | Inference Steps |
+|-------|-------------|-------------------|-----------------|
+| **Stable Diffusion v1.5** | UNet + CLIP | 512px | 20 |
+| **FLUX.1 Schnell** | Transformer + CLIP + T5 | 1024px | 1-4 |
 
 ---
 
-## 🚀 Getting Started
+## Features
+
+* **Multi-model support**: Train on Stable Diffusion or FLUX Schnell with a single `model_type` switch.
+* **Modular codebase**: Separate training files for each model (`train_sd.py`, `train_flux.py`) with shared utilities.
+* **LoRA fine-tuning**: Efficiently train only a small number of parameters, reducing GPU memory and training time.
+* **Configurable training**: All parameters controlled via `training_config.json`.
+* **Automatic sample generation**: Generate sample images at regular intervals to monitor progress.
+* **`safetensors` support**: LoRA weights saved in the recommended format.
+* **Streamlit UI**: Upload datasets and launch training from a single web page.
+
+---
+
+## Project Structure
+
+```
+src/
+├── train.py              # Dispatcher — routes to SD or FLUX trainer
+├── train_sd.py           # Stable Diffusion training loop + sample generation
+├── train_flux.py         # FLUX Schnell training loop + sample generation
+├── train_utils.py        # Shared utilities (saving weights, logs, prompt handling)
+├── load_model_utils.py   # SD model loading (UNet, VAE, CLIP) + optimizer
+├── flux_model_utils.py   # FLUX model loading (Transformer, VAE, CLIP, T5) + latent helpers
+├── inference.py          # SD inference pipeline
+├── flux_inference.py     # FLUX inference pipeline
+├── dataset.py            # Image-caption dataset (shared by both models)
+└── utils.py              # Config loading, HF login
+```
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-You will need the following to run this project:
-
-* Python 3.8 or higher
-* A CUDA-compatible GPU with at least 8GB of VRAM (16GB recommended for larger resolutions)
-* Hugging Face account for model downloads (if using gated models)
+* Python 3.8+
+* **Stable Diffusion**: CUDA GPU with 8GB+ VRAM (16GB recommended)
+* **FLUX Schnell**: CUDA GPU with 24GB+ VRAM (due to dual text encoders + transformer)
+* Hugging Face account (for gated model downloads)
 
 ### Installation
 
-1.  Clone the repository and navigate to the project directory.
+1. Clone the repository:
 
     ```bash
-    git clone [https://github.com/your_username/sd-lora-finetune.git](https://github.com/your_username/sd-lora-finetune.git)
-    cd sd-lora-finetune
+    git clone https://github.com/your_username/Diffusion-Model-Fine-tuner.git
+    cd Diffusion-Model-Fine-tuner
     ```
 
-2.  Prepare your dataset. Place your images in a directory, with each image having a corresponding `.txt` file containing its caption. The caption should include your unique `trigger_phrase`.
+2. Install dependencies:
 
-    **Example:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3. Prepare your dataset. Place images in a directory with matching `.txt` caption files:
 
     ```
     /your_images_path/
-    ├── my_image1.png
-    ├── my_image1.txt  (e.g., "A photo of [trigger] playing guitar")
-    ├── my_image2.png
-    └── my_image2.txt  (e.g., "An illustration of [trigger] reading a book")
+    ├── image1.png
+    ├── image1.txt    # "A photo of [trigger_phrase] playing guitar"
+    ├── image2.png
+    └── image2.txt    # "An illustration of [trigger_phrase] reading a book"
     ```
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
-The `training_config.json` file controls all aspects of the training process. Update the values in this file to match your project.
+The `training_config.json` file controls all training parameters.
+
+### Stable Diffusion
 
 ```json
 {
+  "model_type": "sd",
   "model_name": "runwayml/stable-diffusion-v1-5",
   "images_path": "path/to/your/images",
-  "hf_api_key": null,
   "trigger_phrase": "techtron",
   "batch_size": 1,
-  "gradient_accumulation_steps": 1,
   "steps": 2000,
   "learning_rate": 1e-4,
-  "optimizer": "adamw8bit",
   "lora_rank": 16,
   "lora_alpha": 16,
-  "save_every": 200,
-  "sample_every": 200,
-  "max_step_saves": 4,
-  "save_dtype": "float16",
   "sample_width": 512,
   "sample_height": 512,
   "guidance_scale": 7.5,
-  "sample_steps": 20,
-  "sample_prompts": [
-    "[trigger] linkedin headshot, professional, high quality, studio lighting, corporate background, sharp focus, dslr photo",
-    "[trigger] instagram post, vibrant colors, influencer style, street fashion, bokeh background, dramatic lighting",
-    "[trigger] facebook profile picture, friendly, casual, outdoors, smiling, natural light, park setting",
-    "[trigger] fashion model for a magazine cover, dramatic pose, high fashion attire, bold colors, magazine logo",
-    "[trigger] video game character, detailed armor, futuristic city background, neon lights, high resolution, concept art",
-    "[trigger] professional chef, elegant, cooking in a modern kitchen, gourmet dish, steam rising, cinematic",
-    "[trigger] professional photographer, holding a camera, urban exploration, golden hour, wide shot",
-    "[trigger] musician, playing a guitar on stage, concert lighting, energetic crowd, rock star, detailed",
-    "[trigger] painter in a studio, artistic style, easel, brushes, canvas, natural light, soft colors",
-    "[trigger] professional athlete, action shot, dynamic pose, sports stadium, bright sunlight, motion blur"
-  ]
+  "sample_steps": 20
 }
+```
+
+### FLUX Schnell
+
+Set `model_type` to `"flux"` and configure the FLUX-specific fields:
+
+```json
+{
+  "model_type": "flux",
+  "model_name": "black-forest-labs/FLUX.1-schnell",
+  "images_path": "path/to/your/images",
+  "trigger_phrase": "techtron",
+  "batch_size": 1,
+  "steps": 1000,
+  "learning_rate": 1e-4,
+  "lora_rank": 16,
+  "lora_alpha": 16,
+  "flux_sample_steps": 4,
+  "flux_sample_width": 1024,
+  "flux_sample_height": 1024,
+  "flux_guidance_scale": 0.0,
+  "flux_max_sequence_length": 512,
+  "flux_lora_targets": "attention_ff"
+}
+```
+
+#### FLUX LoRA Target Presets
+
+| Preset | Description |
+|--------|-------------|
+| `attention_only` | Only attention layers (to_q, to_k, to_v, to_out) |
+| `attention_ff` | Attention + feed-forward layers (recommended) |
+| `all_linear` | All linear layers including cross-attention and context FF |
 
 ---
 
-## 🖥️ Streamlit UI
+## Usage
 
-You can run a single-page Streamlit interface to upload images and captions and launch training directly:
+### Streamlit UI
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
-### Caption upload options
+1. Select **Model type** (`sd` or `flux`) in the sidebar.
+2. Configure training parameters (steps, learning rate, batch size, etc.).
+3. Upload images and captions.
+4. Click **Start Fine-tuning**.
 
-- **Paste mappings** in this format (one per line):
-  `filename.png|your caption text`
-- **Upload `.txt` files** with matching basenames (for `image1.png`, upload `image1.txt`).
+FLUX-specific settings (sample steps, resolution, LoRA targets) appear automatically when `flux` is selected.
 
-The UI prepares a dataset folder under `ui_runs/` and then runs the existing fine-tuning pipeline. Outputs are written to `output/`.
+### Python API
 
+```python
+import sys
+sys.path.insert(0, "src")
+from train import train_model
+
+# Stable Diffusion
+train_model(
+    model_name="runwayml/stable-diffusion-v1-5",
+    images_directory="path/to/images",
+    hf_api_key="",
+    model_type="sd",
+)
+
+# FLUX Schnell
+train_model(
+    model_name="black-forest-labs/FLUX.1-schnell",
+    images_directory="path/to/images",
+    hf_api_key="",
+    model_type="flux",
+)
+```
+
+### Inference
+
+```python
+# Stable Diffusion
+from inference import create_inference_pipeline
+
+pipe = create_inference_pipeline(
+    model_name="runwayml/stable-diffusion-v1-5",
+    lora_path="output/sd_lora_final.safetensors",
+)
+image = pipe("A photo of techtron in a park").images[0]
+
+# FLUX Schnell
+from flux_inference import create_flux_inference_pipeline
+
+pipe = create_flux_inference_pipeline(
+    model_name="black-forest-labs/FLUX.1-schnell",
+    lora_path="output/flux_lora_final.safetensors",
+)
+image = pipe("A photo of techtron in a park", num_inference_steps=4).images[0]
+```
+
+---
+
+## Outputs
+
+Training produces the following in the `output/` directory:
+
+```
+output/
+├── sd_lora_final.safetensors      # or flux_lora_final.safetensors
+├── *_lora_step_*.safetensors      # Intermediate checkpoints
+├── training_config.json           # Config snapshot for the run
+├── training_logs.jsonl            # Per-step loss and learning rate
+├── image_logs.jsonl               # Sample generation metadata
+├── samples/                       # Generated sample images
+└── README.md                      # Auto-generated with embedded samples
+```
+
+---
+
+## Key Technical Details
+
+### Stable Diffusion
+- **Backbone**: UNet2DConditionModel with LoRA on attention + FF layers
+- **Text encoder**: CLIP (frozen)
+- **Loss**: MSE on predicted noise vs actual noise (DDPM)
+- **dtype**: float16
+
+### FLUX Schnell
+- **Backbone**: FluxTransformer2DModel with LoRA
+- **Text encoders**: CLIP (pooled embeddings) + T5 (sequence embeddings), both frozen
+- **Loss**: MSE on predicted velocity vs true velocity (rectified flow matching)
+- **Latent format**: 16-channel VAE latents packed into 2x2 patches
+- **Timestep sampling**: Sigmoid distribution (concentrates on mid-range timesteps)
+- **dtype**: bfloat16 (required — float16 overflows for FLUX)
+- **Guidance**: 0.0 (Schnell is a distilled model, no classifier-free guidance)
