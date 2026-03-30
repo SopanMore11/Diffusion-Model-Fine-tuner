@@ -10,3 +10,5 @@ huggingface_hub
 Pillow
 tqdm
 streamlit
+sentencepiece
+protobuf

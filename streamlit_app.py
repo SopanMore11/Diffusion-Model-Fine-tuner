@@ -13,7 +13,7 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from train import train_sd_model  # noqa: E402
+from train import train_model  # noqa: E402
 from utils import load_training_config  # noqa: E402
 
 
@@ -103,6 +103,8 @@ def _run_training_with_config_overrides(
     learning_rate: float,
     sample_every: int,
     save_every: int,
+    model_type: str = "sd",
+    **flux_kwargs,
 ):
     config_path = ROOT_DIR / "training_config.json"
     original_text = config_path.read_text(encoding="utf-8")
@@ -110,6 +112,7 @@ def _run_training_with_config_overrides(
     try:
         config = load_training_config(str(config_path))
         config["model_name"] = model_name
+        config["model_type"] = model_type
         config["trigger_phrase"] = trigger_phrase
         config["steps"] = int(steps)
         config["batch_size"] = int(batch_size)
@@ -117,9 +120,22 @@ def _run_training_with_config_overrides(
         config["sample_every"] = int(sample_every)
         config["save_every"] = int(save_every)
 
+        if model_type == "flux":
+            config["flux_sample_steps"] = flux_kwargs.get("flux_sample_steps", 4)
+            config["flux_sample_width"] = flux_kwargs.get("flux_sample_width", 1024)
+            config["flux_sample_height"] = flux_kwargs.get("flux_sample_height", 1024)
+            config["flux_lora_targets"] = flux_kwargs.get("flux_lora_targets", "attention_ff")
+            config["flux_guidance_scale"] = 0.0
+            config["resolutions"] = [flux_kwargs.get("flux_sample_width", 1024)]
+
         config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
-        train_sd_model(model_name=model_name, images_directory=str(images_dir), hf_api_key=hf_api_key)
+        train_model(
+            model_name=model_name,
+            images_directory=str(images_dir),
+            hf_api_key=hf_api_key,
+            model_type=model_type,
+        )
     finally:
         config_path.write_text(original_text, encoding="utf-8")
 
@@ -132,11 +148,25 @@ with st.sidebar:
     st.header("Training Settings")
     default_config = load_training_config(str(ROOT_DIR / "training_config.json"))
 
-    model_name = st.text_input("Base model name", value=default_config.get("model_name", "runwayml/stable-diffusion-v1-5"))
+    model_type = st.selectbox(
+        "Model type",
+        ["sd", "flux"],
+        index=0,
+        help="Select 'sd' for Stable Diffusion or 'flux' for FLUX.1 Schnell",
+    )
+
+    if model_type == "flux":
+        default_model = "black-forest-labs/FLUX.1-schnell"
+        default_steps = 1000
+    else:
+        default_model = default_config.get("model_name", "runwayml/stable-diffusion-v1-5")
+        default_steps = int(default_config.get("steps", 2000))
+
+    model_name = st.text_input("Base model name", value=default_model)
     hf_api_key = st.text_input("HF API key (optional)", type="password", value="")
     trigger_phrase = st.text_input("Trigger phrase", value=default_config.get("trigger_phrase", "techtron"))
 
-    steps = st.number_input("Steps", min_value=1, value=int(default_config.get("steps", 2000)), step=1)
+    steps = st.number_input("Steps", min_value=1, value=default_steps, step=1)
     batch_size = st.number_input("Batch size", min_value=1, value=int(default_config.get("batch_size", 1)), step=1)
     learning_rate = st.number_input(
         "Learning rate",
@@ -147,6 +177,26 @@ with st.sidebar:
     )
     sample_every = st.number_input("Sample every", min_value=1, value=int(default_config.get("sample_every", 200)), step=1)
     save_every = st.number_input("Save checkpoint every", min_value=1, value=int(default_config.get("save_every", 200)), step=1)
+
+    # FLUX-specific settings
+    if model_type == "flux":
+        st.subheader("FLUX Settings")
+        flux_sample_steps = st.number_input(
+            "FLUX sample steps", min_value=1, value=4, step=1,
+            help="Schnell works best with 1-4 steps",
+        )
+        flux_sample_width = st.number_input(
+            "FLUX sample width", min_value=256, value=1024, step=64,
+        )
+        flux_sample_height = st.number_input(
+            "FLUX sample height", min_value=256, value=1024, step=64,
+        )
+        flux_lora_targets = st.selectbox(
+            "LoRA target modules",
+            ["attention_only", "attention_ff", "all_linear"],
+            index=1,
+            help="Which transformer modules to apply LoRA to",
+        )
 
 st.subheader("1) Upload dataset")
 uploaded_images = st.file_uploader(
@@ -209,7 +259,7 @@ if start_training:
 
     with st.spinner("Training started. This can take a long time..."):
         try:
-            _run_training_with_config_overrides(
+            train_kwargs = dict(
                 model_name=model_name,
                 images_dir=images_dir,
                 hf_api_key=hf_api_key,
@@ -219,7 +269,16 @@ if start_training:
                 learning_rate=float(learning_rate),
                 sample_every=int(sample_every),
                 save_every=int(save_every),
+                model_type=model_type,
             )
+            if model_type == "flux":
+                train_kwargs.update(
+                    flux_sample_steps=flux_sample_steps,
+                    flux_sample_width=flux_sample_width,
+                    flux_sample_height=flux_sample_height,
+                    flux_lora_targets=flux_lora_targets,
+                )
+            _run_training_with_config_overrides(**train_kwargs)
             st.success("Training completed! Check the `output/` directory for weights/logs/samples.")
         except Exception as exc:
             st.error(f"Training failed: {exc}")

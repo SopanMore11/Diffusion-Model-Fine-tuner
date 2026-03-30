@@ -1,4 +1,5 @@
 {
+  "model_type": "sd",
   "model_name": "runwayml/stable-diffusion-v1-5",
   "images_path": "train_images",
   "hf_api_key": null,
@@ -29,5 +30,11 @@
     "[trigger_phrase] painter in a studio, artistic style, easel, brushes, canvas, natural light, soft colors",
     "[trigger_phrase] professional athlete, action shot, dynamic pose, sports stadium, bright sunlight, motion blur"
   ],
-  "trigger_phrase": "techtron"
+  "trigger_phrase": "techtron",
+  "flux_guidance_scale": 0.0,
+  "flux_sample_steps": 4,
+  "flux_sample_width": 1024,
+  "flux_sample_height": 1024,
+  "flux_max_sequence_length": 512,
+  "flux_lora_targets": "attention_ff"
 }
